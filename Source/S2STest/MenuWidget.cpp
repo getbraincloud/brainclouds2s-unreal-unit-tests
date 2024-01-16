@@ -4,7 +4,7 @@
 #include "MenuWidget.h"
 #include "Runtime/UMG/Public/Components/Button.h" //unreal has a "INCLUDE WHAT YOU USE" structure for fast compilation so you need to include each class you use from their engine. 
 #include "Runtime/UMG/Public/Components/TextBlock.h"
-#include "BrainCloudS2S/ConvertUtilities.h"
+#include "JsonUtil.h"
 
 DEFINE_LOG_CATEGORY(LogBrainCloudS2STest);
 
@@ -120,7 +120,7 @@ void UMenuWidget::TestJoinSysChannel(FS2SRTTCallbackDelegate callback)
 
 bool UMenuWidget::isError(const FString& jsonMessage)
 {
-	TSharedPtr<FJsonObject> jsonData = ConvertUtilities::jsonStringToValue(jsonMessage);
+	TSharedPtr<FJsonObject> jsonData = JsonUtil::jsonStringToValue(jsonMessage);
 	int status = jsonData->HasField(TEXT("status")) ? jsonData->GetNumberField(TEXT("status")) : 200;
 
 	return status != 200;

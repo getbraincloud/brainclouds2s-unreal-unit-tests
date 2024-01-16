@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "BrainCloudS2S/S2SRTTComms.h"
-#include "BrainCloudS2S/BrainCloudS2S.h"
+#include "S2SRTTComms.h"
+#include "BrainCloudS2S.h"
 #include "MenuWidget.generated.h"
 
 DECLARE_DYNAMIC_DELEGATE_OneParam(FS2SRTTCallbackDelegate, const FString&, JsonData);
