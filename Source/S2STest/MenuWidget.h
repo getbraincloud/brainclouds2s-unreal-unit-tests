@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "S2SRTTComms.h"
 #include "BrainCloudS2S.h"
 #include "MenuWidget.generated.h"
 
@@ -18,7 +17,7 @@ class S2STEST_API UMenuWidget : public UUserWidget
 	GENERATED_BODY()
 
 protected:
-	US2SRTTComms *_bc;
+	UBrainCloudS2S *_bc;
 	int lastServerTime = 0;
 
 	UFUNCTION(BlueprintCallable, Category = "BrainCloudS2S")

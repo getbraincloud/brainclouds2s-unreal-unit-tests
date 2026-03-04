@@ -2,9 +2,10 @@
 
 
 #include "MenuWidget.h"
-#include "Runtime/UMG/Public/Components/Button.h" //unreal has a "INCLUDE WHAT YOU USE" structure for fast compilation so you need to include each class you use from their engine. 
+#include "Runtime/UMG/Public/Components/Button.h" //unreal has a "INCLUDE WHAT YOU USE" structure for fast compilation so you need to include each class you use from their engine.
 #include "Runtime/UMG/Public/Components/TextBlock.h"
 #include "JsonUtil.h"
+#include "S2SRTTComms.h"
 
 DEFINE_LOG_CATEGORY(LogBrainCloudS2STest);
 
@@ -18,9 +19,9 @@ void UMenuWidget::NativeConstruct()
 	FString serverSecret = "";
 	FString url = "https://api.internal.braincloudservers.com/s2sdispatcher";
 
-	_bc = NewObject<US2SRTTComms>();
+	_bc = UBrainCloudS2S::CreateS2SContext(appId, serverName, serverSecret, url, false);
 	_bc->AddToRoot();
-	_bc->InitializeS2S(appId, serverName, serverSecret, url, false, true);
+	_bc->setLogEnabled(true);
 }
 
 void UMenuWidget::RunCallbacks()
@@ -41,7 +42,7 @@ void UMenuWidget::TestAuthentication(FS2SRTTCallbackDelegate callback)
 void UMenuWidget::TestEnableRTT(FS2SRTTCallbackDelegate successCallback, FS2SRTTCallbackDelegate failureCallback, FS2SRTTCallbackDelegate rttCallback)
 {
 	if (_bc == nullptr) return;
-	_bc->enableRTT([this, successCallback](const FString& result)
+	_bc->GetRTTComms()->enableRTT([this, successCallback](const FString& result)
 		{
 			successCallback.ExecuteIfBound(result);
 		}, [this, failureCallback](const FString& result)
@@ -49,7 +50,7 @@ void UMenuWidget::TestEnableRTT(FS2SRTTCallbackDelegate successCallback, FS2SRTT
 			failureCallback.ExecuteIfBound(result);
 		});
 	//Register callback for receiving RTT message
-	_bc->registerRTTCallback([this, rttCallback](const FString& result)
+	_bc->GetRTTComms()->registerRTTCallback([this, rttCallback](const FString& result)
 		{
 			rttCallback.ExecuteIfBound(result);
 		});
@@ -88,7 +89,7 @@ void UMenuWidget::TestDisableRTT(FS2SRTTCallbackDelegate callback)
 {
 	if (_bc == nullptr) return;
 
-	_bc->disableRTT();
+	_bc->GetRTTComms()->disableRTT();
 	callback.ExecuteIfBound("[RTT Disabled]");
 }
 
