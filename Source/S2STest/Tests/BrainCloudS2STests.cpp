@@ -20,9 +20,13 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
 #include "BrainCloudS2S.h"
 #include "S2SRTTComms.h"
 #include "S2SGlobalFileV3.h"
+#include "S2SServiceName.h"
+#include "S2SServiceOperation.h"
+#include "S2SOperationParam.h"
 
 // ============================================================
 // Credential loading from Config/BrainCloudSettings.ini
@@ -107,6 +111,33 @@ private:
 // ============================================================
 // Helpers
 // ============================================================
+
+/** Build an S2S message JSON with no data object. */
+static FString BuildS2SRequest(const TCHAR* Service, const TCHAR* Operation)
+{
+	TSharedRef<FJsonObject> Request = MakeShared<FJsonObject>();
+	Request->SetStringField(TEXT("service"),   Service);
+	Request->SetStringField(TEXT("operation"), Operation);
+	FString Out;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Out);
+	FJsonSerializer::Serialize(Request, Writer);
+	return Out;
+}
+
+/** Build an S2S message JSON with a pre-populated data object. */
+static FString BuildS2SRequest(const TCHAR* Service, const TCHAR* Operation,
+                               const TSharedRef<FJsonObject>& Data)
+{
+	TSharedRef<FJsonObject> Request = MakeShared<FJsonObject>();
+	Request->SetStringField(TEXT("service"),   Service);
+	Request->SetStringField(TEXT("operation"), Operation);
+	Request->SetObjectField(TEXT("data"),      Data);
+	FString Out;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Out);
+	FJsonSerializer::Serialize(Request, Writer);
+	return Out;
+}
+
 static bool ParseS2SSuccess(const FString& JsonResult)
 {
 	TSharedPtr<FJsonObject> Json;
@@ -180,9 +211,11 @@ bool FBrainCloudRequestTest::RunTest(const FString& Parameters)
 			return;
 		}
 
-		const FString RequestJson = TEXT(
-			"{\"service\":\"globalFileV3\",\"operation\":\"SYS_GET_GLOBAL_FILE_LIST\","
-			"\"data\":{\"folderPath\":\"\",\"recurse\":true}}");
+		TSharedRef<FJsonObject> ListData = MakeShared<FJsonObject>();
+		ListData->SetStringField(S2SOperationParam::FolderPath, TEXT(""));
+		ListData->SetBoolField(S2SOperationParam::Recurse, true);
+		const FString RequestJson = BuildS2SRequest(
+			S2SServiceName::GlobalFileV3, S2SServiceOperation::SysGetGlobalFileList, ListData);
 
 		State->S2S->request(RequestJson, [State](const FString& Result)
 		{
@@ -323,10 +356,11 @@ bool FBrainCloudRTTSendMessageTest::RunTest(const FString& Parameters)
 			[State, ChannelId](const FString& /* RTTResult */)
 			{
 				// Join the sys channel
-				const FString JoinJson = FString::Printf(
-					TEXT("{\"service\":\"chat\",\"operation\":\"SYS_CHANNEL_CONNECT\","
-					     "\"data\":{\"channelId\":\"%s\",\"maxReturn\":0}}"),
-					*ChannelId);
+				TSharedRef<FJsonObject> JoinData = MakeShared<FJsonObject>();
+				JoinData->SetStringField(S2SOperationParam::ChannelId, ChannelId);
+				JoinData->SetNumberField(S2SOperationParam::MaxReturn, 0);
+				const FString JoinJson = BuildS2SRequest(
+					S2SServiceName::Chat, S2SServiceOperation::SysChannelConnect, JoinData);
 
 				State->S2S->request(JoinJson, [State, ChannelId](const FString& JoinResult)
 				{
@@ -338,12 +372,16 @@ bool FBrainCloudRTTSendMessageTest::RunTest(const FString& Parameters)
 					}
 
 					// Send a chat message
-					const FString MsgJson = FString::Printf(
-						TEXT("{\"service\":\"chat\",\"operation\":\"SYS_POST_CHAT_MESSAGE\","
-						     "\"data\":{\"channelId\":\"%s\","
-						     "\"content\":{\"foo\":\"bar\",\"someData\":\"12345\"},"
-						     "\"recordInHistory\":false}}"),
-						*ChannelId);
+					TSharedRef<FJsonObject> ContentData = MakeShared<FJsonObject>();
+					ContentData->SetStringField(TEXT("foo"),      TEXT("bar"));
+					ContentData->SetStringField(TEXT("someData"), TEXT("12345"));
+
+					TSharedRef<FJsonObject> MsgData = MakeShared<FJsonObject>();
+					MsgData->SetStringField(S2SOperationParam::ChannelId,       ChannelId);
+					MsgData->SetObjectField(S2SOperationParam::Content,         ContentData);
+					MsgData->SetBoolField(S2SOperationParam::RecordInHistory,   false);
+					const FString MsgJson = BuildS2SRequest(
+						S2SServiceName::Chat, S2SServiceOperation::SysPostChatMessage, MsgData);
 
 					State->S2S->request(MsgJson, [State](const FString& MsgResult)
 					{
