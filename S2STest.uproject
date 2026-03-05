@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "4.27",
+	"EngineAssociation": "5.3",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -12,6 +12,32 @@
 				"Engine",
 				"UMG"
 			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "AutomationDriverTests",
+			"Enabled": true
+		},
+		{
+			"Name": "EditorTests",
+			"Enabled": true
+		},
+		{
+			"Name": "RuntimeTests",
+			"Enabled": true
+		},
+		{
+			"Name": "TestFramework",
+			"Enabled": true
+		},
+		{
+			"Name": "FunctionalTestingEditor",
+			"Enabled": true
+		},
+		{
+			"Name": "JsonBlueprintUtilities",
+			"Enabled": true
 		}
 	]
 }
