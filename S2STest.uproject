@@ -38,6 +38,14 @@
 		{
 			"Name": "JsonBlueprintUtilities",
 			"Enabled": true
+		},
+		{
+			"Name": "BCClient",
+			"Enabled": true
+		},
+		{
+			"Name": "BrainCloudS2SPlugin",
+			"Enabled": true
 		}
 	]
 }

@@ -1,21 +1,19 @@
 // BrainCloudS2STests.cpp — C++ automation tests for the BrainCloudS2SPlugin.
 //
-// Credentials are read from Config/BrainCloudSettings.ini:
-//   [Credentials]
-//   AppId=...
-//   ServerName=...
-//   S2SKey=...
-//   S2SUrl=...
+// Credentials are read from environment variables (set by "node bccm test unreal_s2s"):
+//   BC_APP_ID         — brainCloud app ID
+//   BC_SERVER_NAME    — S2S server name
+//   BC_SERVER_SECRET  — S2S server secret
+//   BC_S2S_URL        — S2S dispatcher URL
 //
 // Run from command line:
-//   UnrealEditor.exe "E:\UnrealProjects\bcS2SUnitTests 5.3\S2STest.uproject" ^
-//     -ExecCmds="Automation RunTests BrainCloudS2S" ^
-//     -unattended -nopause -nosplash -nullrhi -log
+//   UnrealEditor-Cmd.exe "S2STest.uproject" ^
+//     -ExecCmds="Automation RunTests BrainCloudS2S;quit" ^
+//     -unattended -NullRHI -nosplash -abslog="tests.log"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Misc/AutomationTest.h"
-#include "Misc/ConfigCacheIni.h"
 #include "Misc/Paths.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
@@ -27,33 +25,26 @@
 #include "S2SServiceName.h"
 #include "S2SServiceOperation.h"
 #include "S2SOperationParam.h"
+#include "HAL/PlatformMisc.h"
 
 // ============================================================
-// Credential loading from Config/BrainCloudSettings.ini
+// Credential loading from environment variables
 // ============================================================
 struct FS2SCredentials
 {
 	FString AppId;
 	FString ServerName;
-	FString ServerSecret;  // read from S2SKey
-	FString Url;           // read from S2SUrl
+	FString ServerSecret;
+	FString Url;
 };
 
 static FS2SCredentials LoadCredentials()
 {
 	FS2SCredentials Creds;
-	const FString IniPath = FPaths::ProjectConfigDir() / TEXT("BrainCloudSettings.ini");
-
-	// Read the file directly rather than going through GConfig, which is
-	// unreliable for custom ini files outside the standard UE config hierarchy.
-	FConfigFile ConfigFile;
-	ConfigFile.Read(IniPath);
-
-	ConfigFile.GetString(TEXT("Credentials"), TEXT("AppId"),      Creds.AppId);
-	ConfigFile.GetString(TEXT("Credentials"), TEXT("ServerName"), Creds.ServerName);
-	ConfigFile.GetString(TEXT("Credentials"), TEXT("S2SKey"),     Creds.ServerSecret);
-	ConfigFile.GetString(TEXT("Credentials"), TEXT("S2SUrl"),     Creds.Url);
-
+	Creds.AppId        = FPlatformMisc::GetEnvironmentVariable(TEXT("BC_APP_ID"));
+	Creds.ServerName   = FPlatformMisc::GetEnvironmentVariable(TEXT("BC_SERVER_NAME"));
+	Creds.ServerSecret = FPlatformMisc::GetEnvironmentVariable(TEXT("BC_SERVER_SECRET"));
+	Creds.Url          = FPlatformMisc::GetEnvironmentVariable(TEXT("BC_S2S_URL"));
 	return Creds;
 }
 
@@ -165,7 +156,7 @@ static UBrainCloudS2S* MakeTestContext(const FS2SCredentials& Creds)
 // BrainCloudS2S.Authenticate
 // ============================================================
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBrainCloudAuthenticateTest, "BrainCloudS2S.Authenticate",
-	EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FBrainCloudAuthenticateTest::RunTest(const FString& Parameters)
 {
@@ -194,7 +185,7 @@ bool FBrainCloudAuthenticateTest::RunTest(const FString& Parameters)
 // BrainCloudS2S.Request  (authenticate → send a raw S2S request)
 // ============================================================
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBrainCloudRequestTest, "BrainCloudS2S.Request",
-	EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FBrainCloudRequestTest::RunTest(const FString& Parameters)
 {
@@ -240,7 +231,7 @@ bool FBrainCloudRequestTest::RunTest(const FString& Parameters)
 // BrainCloudS2S.RTT.Enable
 // ============================================================
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBrainCloudRTTEnableTest, "BrainCloudS2S.RTT.Enable",
-	EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FBrainCloudRTTEnableTest::RunTest(const FString& Parameters)
 {
@@ -286,7 +277,7 @@ bool FBrainCloudRTTEnableTest::RunTest(const FString& Parameters)
 // BrainCloudS2S.RTT.Disable  (enable RTT, then disable it)
 // ============================================================
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBrainCloudRTTDisableTest, "BrainCloudS2S.RTT.Disable",
-	EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FBrainCloudRTTDisableTest::RunTest(const FString& Parameters)
 {
@@ -332,7 +323,7 @@ bool FBrainCloudRTTDisableTest::RunTest(const FString& Parameters)
 // BrainCloudS2S.RTT.SendMessage  (auth → enable RTT → join sys channel → send chat)
 // ============================================================
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBrainCloudRTTSendMessageTest, "BrainCloudS2S.RTT.SendMessage",
-	EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FBrainCloudRTTSendMessageTest::RunTest(const FString& Parameters)
 {
@@ -414,7 +405,7 @@ bool FBrainCloudRTTSendMessageTest::RunTest(const FString& Parameters)
 // BrainCloudS2S.GlobalFileV3.GetFileList
 // ============================================================
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBrainCloudGFV3GetFileListTest, "BrainCloudS2S.GlobalFileV3.GetFileList",
-	EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FBrainCloudGFV3GetFileListTest::RunTest(const FString& Parameters)
 {
@@ -454,7 +445,7 @@ bool FBrainCloudGFV3GetFileListTest::RunTest(const FString& Parameters)
 // BrainCloudS2S.GlobalFileV3.CheckFilenameExists
 // ============================================================
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBrainCloudGFV3CheckFilenameExistsTest, "BrainCloudS2S.GlobalFileV3.CheckFilenameExists",
-	EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FBrainCloudGFV3CheckFilenameExistsTest::RunTest(const FString& Parameters)
 {
@@ -495,7 +486,7 @@ bool FBrainCloudGFV3CheckFilenameExistsTest::RunTest(const FString& Parameters)
 // BrainCloudS2S.GlobalFileV3.CreateAndDeleteFolder
 // ============================================================
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBrainCloudGFV3CreateDeleteFolderTest, "BrainCloudS2S.GlobalFileV3.CreateAndDeleteFolder",
-	EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter)
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::CommandletContext | EAutomationTestFlags::ProductFilter)
 
 bool FBrainCloudGFV3CreateDeleteFolderTest::RunTest(const FString& Parameters)
 {
